@@ -1,0 +1,13 @@
+.venv/
+wandb/
+__pycache__/
+*.mp4
+.vscode/
+checkpoints/
+.claude
+*.png
+videos/
+*.log
+
+data/
+README_gcs.md
