@@ -6,6 +6,7 @@ import platform
 from typing import Any
 
 import etils.epath as epath
+import numpy as np
 import flax.nnx as nnx
 from flax.training import common_utils
 import flax.traverse_util as traverse_util
@@ -370,6 +371,22 @@ def main(config: _config.TrainConfig):
     batch = next(data_iter)
     log_mem("After getting batch")
     logging.info(f"Initialized data loader (shapes):\n{training_utils.array_tree_to_info(batch)}")
+
+    # Log camera images from first batch to wandb
+    if jax.process_index() == 0:
+        obs = batch[0]
+        wandb_images = {}
+        for key, img in obs.images.items():
+            sample_images = []
+            for t in range(min(img.shape[0], 4)):
+                sample_img = np.asarray(img[t])
+                sample_img_uint8 = ((sample_img + 1.0) / 2.0 * 255.0).clip(0, 255).astype(np.uint8)
+                sample_images.append(wandb.Image(sample_img_uint8, caption=f"{key}_sample{t}"))
+            if sample_images:
+                wandb_images[f"batch_vis/{key}"] = sample_images
+        if wandb_images:
+            wandb.log(wandb_images, step=0)
+            logging.info(f"Logged first-batch images to wandb: {list(wandb_images.keys())}")
     sharding.log_batch_sharding(batch)
 
     train_runner = TrainingStepRunner(config)
