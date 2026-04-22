@@ -225,11 +225,24 @@ def init_train_state(
     partial_params = _load_weights_and_validate(config.weight_loader, train_state_shape.params.to_pure_dict())
     replicated_sharding = jax.sharding.NamedSharding(mesh, jax.sharding.PartitionSpec())
 
+    # Pre-shard partial_params according to the planned FSDP sharding to avoid
+    # replicating all weights on every device during init.  With a scalar
+    # in_shardings=replicated_sharding, JAX would place a full copy of the
+    # checkpoint (~6 GB for pi0.5) on every chip before running the computation,
+    # which causes OOM on chips with limited HBM (e.g. v5e at 16 GB per chip).
+    # By pre-sharding, each chip only needs its 1/N slice of the params.
+    partial_flat = traverse_util.flatten_dict(partial_params)
+    sharding_flat = traverse_util.flatten_dict(state_sharding.params.to_pure_dict())
+    partial_params_sharding = traverse_util.unflatten_dict(
+        {k: sharding_flat.get(k, replicated_sharding) for k in partial_flat}
+    )
+    partial_params = jax.device_put(partial_params, partial_params_sharding)
+
     # Initialize the train state and mix in the partial params.
     train_state = jax.jit(
         init,
         donate_argnums=(1,),  # donate the partial params buffer.
-        in_shardings=replicated_sharding,
+        in_shardings=(replicated_sharding, partial_params_sharding),
         out_shardings=state_sharding,
     )(init_rng, partial_params)
 
