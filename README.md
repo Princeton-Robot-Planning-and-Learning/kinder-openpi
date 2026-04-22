@@ -1,6 +1,6 @@
 # kinder-openpi
 
-A fork of [OpenPI](https://github.com/Physical-Intelligence/openpi) (from Physical Intelligence) adapted for the [KinDER benchmark](https://github.com/irom-lab/KinDER).
+A fork of [OpenPI](https://github.com/Physical-Intelligence/openpi) (from Physical Intelligence) adapted for the [KinDER benchmark](https://prpl-group.com/kinder-site/).
 
 ---
 
@@ -116,4 +116,4 @@ python scripts/eval.py --no-use_overview_image
 
 ### Step 3: Launch the Environment (Terminal 3)
 
-Start the corresponding robot or simulation environment. See the [KinDER repo](https://github.com/irom-lab/KinDER) for details.
+Start the corresponding robot or simulation environment. See the [KinDER Imitation Learning Baselines](https://github.com/Princeton-Robot-Planning-and-Learning/kinder-baselines/blob/main/kinder-imitation-learning/README.md) for details.
